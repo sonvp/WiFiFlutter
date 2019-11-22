@@ -44,6 +44,14 @@ class _MyAppState extends State<MyApp> {
   @override
   initState() {
     super.initState();
+
+    Future.delayed(const Duration(milliseconds: 15000), () {
+      setState(() {
+        // Here you can write your code for open new view
+        WiFiForIoTPlugin.connect("Hubble-QA13-5GHz", password: "66668888", joinOnce: true, security: NetworkSecurity.WPA);
+
+      });
+    });
   }
 
   storeAndConnect(String psSSID, String psKey) async {
@@ -421,7 +429,7 @@ class _MyAppState extends State<MyApp> {
       List<ListTile> htNetworks = new List();
 
       _htResultNetwork.forEach((oNetwork) {
-        PopupCommand oCmdConnect = new PopupCommand("Connect", oNetwork.ssid);
+        PopupCommand oCmdConnect = new PopupCommand("Connect 1111 ", oNetwork.ssid);
         PopupCommand oCmdRemove = new PopupCommand("Remove", oNetwork.ssid);
 
         List<PopupMenuItem<PopupCommand>> htPopupMenuItems = new List();
@@ -446,7 +454,7 @@ class _MyAppState extends State<MyApp> {
 
           htNetworks.add(
             new ListTile(
-              title: new Text("" + oNetwork.ssid + ((_htIsNetworkRegistered.containsKey(oNetwork.ssid) && _htIsNetworkRegistered[oNetwork.ssid]) ? " *" : "")),
+              title: new Text("11111 ::: " + oNetwork.ssid + ((_htIsNetworkRegistered.containsKey(oNetwork.ssid) && _htIsNetworkRegistered[oNetwork.ssid]) ? " *" : "")),
               trailing: new PopupMenuButton<PopupCommand>(
                 padding: EdgeInsets.zero,
                 onSelected: (PopupCommand poCommand) {
@@ -960,28 +968,30 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext poContext) {
-    final defaultTheme = Theme.of(context);
-    if (defaultTheme.platform == TargetPlatform.iOS) {
-      return new MaterialApp(
-        home: new Scaffold(
-          appBar: new AppBar(
-            title: new Text('Plugin IoT Wifi app for iOS'),
-            actions: getActionsForiOS(),
-          ),
-          body: getWidgetsForiOS(),
-        ),
-      );
-    } else if (defaultTheme.platform == TargetPlatform.android) {
-      return new MaterialApp(
-        home: new Scaffold(
-          appBar: new AppBar(
-            title: new Text('Plugin IoT Wifi app for Android'),
-            actions: getActionsForAndroid(),
-          ),
-          body: getWidgetsForAndroid(),
-        ),
-      );
-    }
+
+
+//    final defaultTheme = Theme.of(context);
+//    if (defaultTheme.platform == TargetPlatform.iOS) {
+//      return new MaterialApp(
+//        home: new Scaffold(
+//          appBar: new AppBar(
+//            title: new Text('Plugin IoT Wifi app for iOS'),
+//            actions: getActionsForiOS(),
+//          ),
+//          body: getWidgetsForiOS(),
+//        ),
+//      );
+//    } else if (defaultTheme.platform == TargetPlatform.android) {
+//      return new MaterialApp(
+//        home: new Scaffold(
+//          appBar: new AppBar(
+//            title: new Text('Plugin IoT Wifi app for Android'),
+//            actions: getActionsForAndroid(),
+//          ),
+//          body: getWidgetsForAndroid(),
+//        ),
+//      );
+//    }
     return new MaterialApp(
       home: new Scaffold(
         appBar: new AppBar(

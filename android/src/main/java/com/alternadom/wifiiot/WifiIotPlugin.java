@@ -53,7 +53,8 @@ import io.flutter.view.FlutterNativeView;
  * WifiIotPlugin
  */
 public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHandler {
-    private WifiManager moWiFi;
+  private static final String TAG = "WifiIotPlugin";
+  private WifiManager moWiFi;
     private Context moContext;
     private WifiApManager moWiFiAPManager;
     private Activity moActivity;
@@ -742,91 +743,151 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         if (security != null) security = security.toUpperCase();
         else security = "NONE";
 
-        if (security.toUpperCase().equals("WPA")) {
+//        if (security.toUpperCase().equals("WPA")) {
+//
+//            /// appropriate ciper is need to set according to security type used,
+//            /// ifcase of not added it will not be able to connect
+//            conf.preSharedKey = "\"" + password + "\"";
+//
+//            conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+//
+//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+//
+//            conf.status = WifiConfiguration.Status.ENABLED;
+//
+//            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+//            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+//
+//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+//
+//            conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+//            conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+//
+//            conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+//            conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
+//        } else if (security.equals("WEP")) {
+//            conf.wepKeys[0] = "\"" + password + "\"";
+//            conf.wepTxKeyIndex = 0;
+//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+//            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
+//        } else {
+//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+//        }
 
-            /// appropriate ciper is need to set according to security type used,
-            /// ifcase of not added it will not be able to connect
-            conf.preSharedKey = "\"" + password + "\"";
-
-            conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-
-            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-
-            conf.status = WifiConfiguration.Status.ENABLED;
-
-            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-
-            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-
-            conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
-            conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-
-            conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-            conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-        } else if (security.equals("WEP")) {
-            conf.wepKeys[0] = "\"" + password + "\"";
-            conf.wepTxKeyIndex = 0;
-            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-        } else {
-            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-        }
+      if (security.equals("NONE")) {
+        conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+      } else {
+        conf.preSharedKey = ssidFormat(password);
+        conf.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
+        conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA); // For WPA
+        conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN); // For WPA2
+        conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+        conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_EAP);
+        conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+        conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
+        conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+        conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+      }
 
         /// Remove the existing configuration for this netwrok
-        List<WifiConfiguration> mWifiConfigList = moWiFi.getConfiguredNetworks();
-
-        int updateNetwork = -1;
-
-        if (mWifiConfigList != null) {
-            for (WifiConfiguration wifiConfig : mWifiConfigList) {
-                if (wifiConfig.SSID.equals(conf.SSID)) {
-                    conf.networkId = wifiConfig.networkId;
-                    updateNetwork = moWiFi.updateNetwork(conf);
-                }
-            }
-        }
-
-        /// If network not already in configured networks add new network
-        if (updateNetwork == -1) {
-            updateNetwork = moWiFi.addNetwork(conf);
-            moWiFi.saveConfiguration();
-        }
-
-        if (updateNetwork == -1) {
-            return false;
-        }
+//        List<WifiConfiguration> mWifiConfigList = moWiFi.getConfiguredNetworks();
+//
+//        int updateNetwork = -1;
+//
+//        if (mWifiConfigList != null) {
+//            for (WifiConfiguration wifiConfig : mWifiConfigList) {
+//                if (wifiConfig.SSID.equals(conf.SSID)) {
+//                    conf.networkId = wifiConfig.networkId;
+//                    updateNetwork = moWiFi.updateNetwork(conf);
+//                }
+//            }
+//        }
+//
+//        /// If network not already in configured networks add new network
+//        if (updateNetwork == -1) {
+//            updateNetwork = moWiFi.addNetwork(conf);
+//            moWiFi.saveConfiguration();
+//        }
+//
+//        if (updateNetwork == -1) {
+//            return false;
+//        }
 
         if (joinOnce != null && joinOnce.booleanValue()) {
             ssidsToBeRemovedOnExit.add(conf.SSID);
         }
 
-        boolean disconnect = moWiFi.disconnect();
-        if (!disconnect) {
-            return false;
-        }
 
-        Log.i("ASDF", Thread.currentThread().getName());
+      int networkId = getNetworkId(conf.SSID);
+      Log.d(TAG, "network id found: " + networkId);
+      if (networkId == -1) {
+        networkId = moWiFi.addNetwork(conf);
+        Log.d(TAG, "networkId now: " + networkId);
+      }
+      if (networkId != -1) {
+        return connectWifiManager(networkId);
+      }
 
-        boolean enabled = moWiFi.enableNetwork(updateNetwork, true);
-        if (!enabled) return false;
 
-        boolean connected = false;
-        for (int i = 0; i < 30; i++) {
-            int networkId = moWiFi.getConnectionInfo().getNetworkId();
-            if (networkId != -1) {
-                connected = networkId == updateNetwork;
-                break;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ignored) {
-                break;
-            }
-        }
 
-        return connected;
+//
+//        boolean disconnect = moWiFi.disconnect();
+//        if (!disconnect) {
+//            return false;
+//        }
+//
+//        Log.i("ASDF", Thread.currentThread().getName());
+//
+//        boolean enabled = moWiFi.enableNetwork(updateNetwork, true);
+//        if (!enabled) return false;
+//
+//        boolean connected = false;
+//        for (int i = 0; i < 30; i++) {
+//            int networkId = moWiFi.getConnectionInfo().getNetworkId();
+//            if (networkId != -1) {
+//                connected = networkId == updateNetwork;
+//                break;
+//            }
+//            try {
+//                Thread.sleep(1000);
+//            } catch (InterruptedException ignored) {
+//                break;
+//            }
+//        }
+
+        return false;
     }
+
+  private int getNetworkId(String SSID) {
+    List<WifiConfiguration>  confList = moWiFi.getConfiguredNetworks();
+    if (confList != null && confList.size() > 0) {
+      for (WifiConfiguration existingConfig : confList) {
+        if (trimQuotes(existingConfig.SSID).equals(trimQuotes(SSID))) {
+          return existingConfig.networkId;
+        }
+      }
+    }
+    return -1;
+  }
+
+  private boolean connectWifiManager(int networkId) {
+    moWiFi.disconnect();
+    return moWiFi.enableNetwork(networkId, true);
+  }
+
+  private static String trimQuotes(String str) {
+    if (!str.isEmpty()) {
+      return str.replaceAll("^\"*", "").replaceAll("\"*$", "");
+    }
+    return str;
+  }
+
+  public static String ssidFormat(String str) {
+    if (!str.isEmpty()) {
+      return "\"" + str + "\"";
+    }
+    return str;
+  }
 
     public static String sudoForResult(String... strings) {
         String res = "";
