@@ -804,7 +804,7 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
 //                break;
 //            }
 //        }
-
+      Log.d(TAG, "badly...........");
         return false;
     }
 
@@ -828,10 +828,10 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
             e.printStackTrace();
           }
           retryTimes++;
-          checkConnected();
+          return checkConnected();
         }
-        return false;
       }
+      return false;
     }
 
   private int getNetworkId(String SSID) {

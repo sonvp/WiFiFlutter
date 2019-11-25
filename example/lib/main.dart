@@ -46,10 +46,10 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     Future.delayed(const Duration(milliseconds: 15000), () {
-      setState(() {
+      setState(() async {
         // Here you can write your code for open new view
-        WiFiForIoTPlugin.connect("Hubble-QA13-5GHz", password: "66668888", joinOnce: true, security: NetworkSecurity.WPA);
-
+        bool connected=await WiFiForIoTPlugin.connect("Hubble-QA13-5GHz", password: "66668888", joinOnce: true, security: NetworkSecurity.WPA);
+        print('connectionState: $connected');
       });
     });
   }
