@@ -813,6 +813,10 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
       ConnectivityManager connManager = (ConnectivityManager) moContext.getSystemService(Context.CONNECTIVITY_SERVICE);
       NetworkInfo mWifi = connManager != null ? connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI) : null;
       if (mWifi != null && mWifi.isConnected()) {
+        Log.d(TAG, "checkConnected");
+        WifiInfo info = moWiFi.getConnectionInfo();
+        String stringip = longToIP(info.getIpAddress());
+        Log.d(TAG, "stringip:  " + stringip);
           return true;
       } else {
         if (retryTimes<4) {
@@ -820,10 +824,11 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
           try {
             Thread.sleep(2000);
           } catch (InterruptedException e) {
+            Log.d(TAG, "InterruptedException:  " + e.toString());
             e.printStackTrace();
           }
-          checkConnected();
           retryTimes++;
+          checkConnected();
         }
         return false;
       }
