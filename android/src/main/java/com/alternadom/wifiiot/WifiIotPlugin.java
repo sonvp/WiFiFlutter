@@ -743,36 +743,6 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         if (security != null) security = security.toUpperCase();
         else security = "NONE";
 
-//        if (security.toUpperCase().equals("WPA")) {
-//
-//            /// appropriate ciper is need to set according to security type used,
-//            /// ifcase of not added it will not be able to connect
-//            conf.preSharedKey = "\"" + password + "\"";
-//
-//            conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-//
-//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-//
-//            conf.status = WifiConfiguration.Status.ENABLED;
-//
-//            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
-//            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
-//
-//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-//
-//            conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
-//            conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
-//
-//            conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-//            conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-//        } else if (security.equals("WEP")) {
-//            conf.wepKeys[0] = "\"" + password + "\"";
-//            conf.wepTxKeyIndex = 0;
-//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-//            conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-//        } else {
-//            conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-//        }
 
       if (security.equals("NONE")) {
         conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
@@ -789,29 +759,6 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
       }
 
-        /// Remove the existing configuration for this netwrok
-//        List<WifiConfiguration> mWifiConfigList = moWiFi.getConfiguredNetworks();
-//
-//        int updateNetwork = -1;
-//
-//        if (mWifiConfigList != null) {
-//            for (WifiConfiguration wifiConfig : mWifiConfigList) {
-//                if (wifiConfig.SSID.equals(conf.SSID)) {
-//                    conf.networkId = wifiConfig.networkId;
-//                    updateNetwork = moWiFi.updateNetwork(conf);
-//                }
-//            }
-//        }
-//
-//        /// If network not already in configured networks add new network
-//        if (updateNetwork == -1) {
-//            updateNetwork = moWiFi.addNetwork(conf);
-//            moWiFi.saveConfiguration();
-//        }
-//
-//        if (updateNetwork == -1) {
-//            return false;
-//        }
 
         if (joinOnce != null && joinOnce.booleanValue()) {
             ssidsToBeRemovedOnExit.add(conf.SSID);
@@ -825,7 +772,10 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         Log.d(TAG, "networkId now: " + networkId);
       }
       if (networkId != -1) {
-        return connectWifiManager(networkId);
+        if(connectWifiManager(networkId)){
+          retryTimes=0;
+          return checkConnected();
+        }
       }
 
 
@@ -856,6 +806,27 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
 //        }
 
         return false;
+    }
+
+    int retryTimes=0;
+    private Boolean checkConnected() {
+      ConnectivityManager connManager = (ConnectivityManager) moContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+      NetworkInfo mWifi = connManager != null ? connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI) : null;
+      if (mWifi != null && mWifi.isConnected()) {
+          return true;
+      } else {
+        if (retryTimes<4) {
+          Log.d(TAG, "retryTimes:  " + retryTimes);
+          try {
+            Thread.sleep(2000);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          checkConnected();
+          retryTimes++;
+        }
+        return false;
+      }
     }
 
   private int getNetworkId(String SSID) {
