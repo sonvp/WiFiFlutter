@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.wifi.SupplicantState;
 import android.os.Handler;
 import android.os.Looper;
 import android.net.ConnectivityManager;
@@ -35,6 +36,9 @@ import java.io.InputStream;
 import java.net.DatagramSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import info.whitebyte.hotspotmanager.ClientScanResult;
@@ -734,18 +738,111 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         return sb.toString();
     }
 
+
+//  public BitSet getAuthAlgorithm() {
+//    BitSet bs = new BitSet(3);
+//    bs.clear();
+//
+//    String[] modes = {"OPEN", "SHARED", "LEAP"};
+//    for (int i = modes.length - 1; i >= 0; i--) {
+//      if (capability.contains(modes[i])) {
+//        bs.set(i);
+//      }
+//    }
+//
+//    if (capability.contains("WEP")) {
+//      bs.set(0);
+//      bs.set(1);
+//    }
+//    return bs;
+//  }
+//
+//  public BitSet getGroupCiphers() {
+//    BitSet bs = new BitSet(4);
+//    bs.clear();
+//    //String[] modes = { "WEP40", "WEP104","TKIP","CCMP"};
+//    String[] modes = {"WEP", "WEP", "TKIP", "CCMP"};
+//    for (int i = modes.length - 1; i >= 0; i--) {
+//      if (capability.contains(modes[i])) {
+//        bs.set(i);
+//      }
+//    }
+//    return bs;
+//  }
+//
+//
+//  public BitSet getProtocols() {
+//    BitSet bs = new BitSet(2);
+//    bs.clear();
+//    String[] modes = {"WPA", "RSN"};
+//    for (int i = modes.length - 1; i >= 0; i--) {
+//      if (capability.contains(modes[i])) {
+//        bs.set(i);
+//      }
+//    }
+//
+//    if (capability.contains("WPA")) {
+//      bs.set(1);//add "RSN"
+//    }
+//
+//    return bs;
+//  }
+
+
+  private WifiConfiguration findCameraAP(String checkSSID) {
+    List<WifiConfiguration> wcs = moWiFi.getConfiguredNetworks();
+    //AA-1453:
+    // Check whether wcs is null or not
+    if (wcs != null && wcs.size() > 0) {
+      for (WifiConfiguration wc : wcs) {
+        // note that: WifiConfiguration SSID has quotes
+        if (wc.SSID == null) {
+          continue;
+        }
+        if (wc.SSID.equalsIgnoreCase(checkSSID)) {
+          return wc;
+        }
+      }
+    }
+    return null;
+  }
+
+  private WifiConfiguration buildWifiConfiguration(String checkSSID) {
+    WifiConfiguration newWC = new WifiConfiguration();
+    newWC.hiddenSSID = false;
+    newWC.SSID = checkSSID;
+//    newWC.BSSID = checkBSSID;
+    newWC.status = WifiConfiguration.Status.ENABLED;
+    // the following is the settings
+    // that found to be working for ai-ball
+    newWC.hiddenSSID = false;
+//    newWC.allowedAuthAlgorithms = ns.getAuthAlgorithm();
+//    newWC.allowedGroupCiphers = ns.getGroupCiphers();
+//    newWC.allowedKeyManagement = ns.getKeyManagement();
+//    if (ns.security.equalsIgnoreCase("WPA")) {
+//      newWC.preSharedKey = convertToQuotedString(PublicDefineGlob.DEFAULT_WPA_PRESHAREDKEY);
+//    }
+//    newWC.allowedPairwiseCiphers = ns.getPairWiseCiphers();
+//    newWC.allowedProtocols = ns.getProtocols();
+    return newWC;
+  }
+
     /// Method to connect to WIFI Network
     private Boolean connectTo(String ssid, String password, String security, Boolean joinOnce) {
         /// Make new configuration
-        WifiConfiguration conf = new WifiConfiguration();
-        conf.SSID = "\"" + ssid + "\"";
+      String checkSSID = '\"' + ssid + '\"';
+      WifiConfiguration conf = findCameraAP(checkSSID);
+      if (conf == null) {
+        Log.d(TAG, "WifiConfiguration conf return null");
+        return false;
+      }
 
-        if (security != null) security = security.toUpperCase();
-        else security = "NONE";
-
+      if (security != null) security = security.toUpperCase();
+      else security = "NONE";
 
       if (security.equals("NONE")) {
-        conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+//        conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+
       } else {
         conf.preSharedKey = ssidFormat(password);
         conf.allowedAuthAlgorithms.set(WifiConfiguration.AuthAlgorithm.OPEN);
@@ -772,38 +869,11 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         Log.d(TAG, "networkId now: " + networkId);
       }
       if (networkId != -1) {
-        if(connectWifiManager(networkId)){
+        if(connectWifiManager(networkId,checkSSID)){
           retryTimes=0;
           return checkConnected();
         }
       }
-
-
-
-//
-//        boolean disconnect = moWiFi.disconnect();
-//        if (!disconnect) {
-//            return false;
-//        }
-//
-//        Log.i("ASDF", Thread.currentThread().getName());
-//
-//        boolean enabled = moWiFi.enableNetwork(updateNetwork, true);
-//        if (!enabled) return false;
-//
-//        boolean connected = false;
-//        for (int i = 0; i < 30; i++) {
-//            int networkId = moWiFi.getConnectionInfo().getNetworkId();
-//            if (networkId != -1) {
-//                connected = networkId == updateNetwork;
-//                break;
-//            }
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException ignored) {
-//                break;
-//            }
-//        }
       Log.d(TAG, "badly...........");
         return false;
     }
@@ -839,6 +909,37 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
     if (confList != null && confList.size() > 0) {
       for (WifiConfiguration existingConfig : confList) {
         if (trimQuotes(existingConfig.SSID).equals(trimQuotes(SSID))) {
+          // when pairing camera in android 5.1, phone has lost connection for a while.
+          // then it reconnects to the router instead of camera.
+          // solution: set camera priority to the highest. phone will reconnect the camera.
+          int pri = 0;
+          for (WifiConfiguration config : confList) {
+            if (config.priority > pri) {
+              pri = config.priority;
+            }
+          }
+          int newPri = pri + 1;
+          if (newPri >= 999999) {
+            // We have reached a rare situation.
+            Collections.sort(confList, new Comparator<WifiConfiguration>() {
+              @Override
+              public int compare(WifiConfiguration wc1, WifiConfiguration wc2) {
+                return wc1.priority - wc2.priority;
+              }
+            });
+            int size = confList.size();
+            for (int ii = 0; ii < size; ii++) {
+              WifiConfiguration config = confList.get(ii);
+              config.priority = ii;
+              moWiFi.updateNetwork(config);
+            }
+            moWiFi.saveConfiguration();
+            newPri = size;
+          }
+          existingConfig.priority = newPri;
+          moWiFi.updateNetwork(existingConfig);
+          boolean es=moWiFi.saveConfiguration();
+          Log.d(TAG, "saveConfiguration returned " + es );
           return existingConfig.networkId;
         }
       }
@@ -846,9 +947,56 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
     return -1;
   }
 
-  private boolean connectWifiManager(int networkId) {
-    moWiFi.disconnect();
-    return moWiFi.enableNetwork(networkId, true);
+  private boolean connectWifiManager(int networkId,String ssid) {
+    boolean enabled=false;
+    int waiting_retries = 60;
+    do {
+      if ((moWiFi.getConnectionInfo() != null &&
+        moWiFi.getConnectionInfo().getIpAddress() != 0) &&
+        moWiFi.getDhcpInfo() != null && moWiFi.getDhcpInfo().ipAddress != 0) {
+        //We're connected but don't have any IP yet
+        Log.d(TAG, "IP: " + (moWiFi.getDhcpInfo().ipAddress & 0xFF) + "." + ((moWiFi.getDhcpInfo().ipAddress >> 8) & 0xFF) + "." +
+          ((moWiFi.getDhcpInfo().ipAddress >> 16) & 0xFF) + "." + ((moWiFi.getDhcpInfo().ipAddress >> 24) & 0xFF));
+        Log.d(TAG, "SV: " + (moWiFi.getDhcpInfo().serverAddress & 0xFF) + "." + ((moWiFi.getDhcpInfo().serverAddress >> 8) & 0xFF) + "." +
+          ((moWiFi.getDhcpInfo().serverAddress >> 16) & 0xFF) + "." + ((moWiFi.getDhcpInfo().serverAddress >> 24) & 0xFF));
+
+
+        String current_ssid = moWiFi.getConnectionInfo().getSSID();
+        ConnectivityManager cm = (ConnectivityManager) moContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo info = cm.getActiveNetworkInfo();
+        if (info != null && info.isConnected()) {
+          current_ssid = info.getExtraInfo();
+          Log.d(TAG, "WiFi SSID: " + current_ssid);
+        }
+        Log.d(TAG, "current_ssid: "+current_ssid);
+
+        if (ssid != null &&
+          (ssid.equals(convertToQuotedString(current_ssid)) ||
+            ssid.equals(current_ssid))) {
+          return true;
+        } else {
+          Log.d(TAG, "Connected to unexpected network -> try to enable expected network priority:");
+          enabled = moWiFi.enableNetwork(networkId, true);
+
+//          moWiFi.reconnect();
+          Log.d(TAG, "enableNetwork: " + networkId + " : " + enabled);
+        }
+      }
+
+      //Log.d(TAG, "connected but don't have any IP yet...");
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+    while (waiting_retries-- > 0 );
+
+    return enabled;
+  }
+
+  public static String convertToQuotedString(String string) {
+    return "\"" + string + "\"";
   }
 
   private static String trimQuotes(String str) {
