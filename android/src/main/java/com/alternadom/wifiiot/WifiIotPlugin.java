@@ -809,13 +809,13 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
 
   private WifiConfiguration buildWifiConfiguration(String checkSSID) {
     WifiConfiguration newWC = new WifiConfiguration();
-    newWC.hiddenSSID = false;
+//    newWC.hiddenSSID = false;
     newWC.SSID = checkSSID;
 //    newWC.BSSID = checkBSSID;
-    newWC.status = WifiConfiguration.Status.ENABLED;
+//    newWC.status = WifiConfiguration.Status.ENABLED;
     // the following is the settings
     // that found to be working for ai-ball
-    newWC.hiddenSSID = false;
+//    newWC.hiddenSSID = false;
 //    newWC.allowedAuthAlgorithms = ns.getAuthAlgorithm();
 //    newWC.allowedGroupCiphers = ns.getGroupCiphers();
 //    newWC.allowedKeyManagement = ns.getKeyManagement();
@@ -834,7 +834,11 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
       WifiConfiguration conf = findCameraAP(checkSSID);
       if (conf == null) {
         Log.d(TAG, "WifiConfiguration conf return null");
-        return false;
+        conf=buildWifiConfiguration(checkSSID);
+        if(conf == null){
+          Log.d(TAG, "WifiConfiguration conf initial  null");
+          return false;
+        }
       }
 
       if (security != null) security = security.toUpperCase();
