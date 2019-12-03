@@ -831,7 +831,7 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
   }
 
   /// Method to connect to WIFI Network
-  private Boolean connectTo(String ssid, String password, String security, Boolean joinOnce) {
+  private boolean connectTo(String ssid, String password, String security, Boolean joinOnce) {
     /// Make new configuration
     String checkSSID = '\"' + ssid + '\"';
     WifiConfiguration conf = findCameraAP(checkSSID);
@@ -880,13 +880,15 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         retryTimes=0;
         return checkConnected();
       }
+
+//      return connectWifiManager(networkId,checkSSID);
     }
     Log.d(TAG, "badly...........");
     return false;
   }
 
   int retryTimes=0;
-  private Boolean checkConnected() {
+  private boolean checkConnected() {
     ConnectivityManager connManager = (ConnectivityManager) moContext.getSystemService(Context.CONNECTIVITY_SERVICE);
     NetworkInfo mWifi = connManager != null ? connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI) : null;
     if (mWifi != null && mWifi.isConnected()) {
@@ -896,19 +898,19 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
       Log.d(TAG, "stringip:  " + stringip);
       return true;
     }
-//    else {
-//      if (retryTimes<4) {
-//        Log.d(TAG, "retryTimes:  " + retryTimes);
-//        try {
-//          Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//          Log.d(TAG, "InterruptedException:  " + e.toString());
-//          e.printStackTrace();
-//        }
-//        retryTimes++;
-//        return checkConnected();
-//      }
-//    }
+    else {
+      if (retryTimes<4) {
+        Log.d(TAG, "retryTimes:  " + retryTimes);
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          Log.d(TAG, "InterruptedException:  " + e.toString());
+          e.printStackTrace();
+        }
+        retryTimes++;
+        return checkConnected();
+      }
+    }
     return false;
   }
 
@@ -997,6 +999,7 @@ public class WifiIotPlugin implements MethodCallHandler, EventChannel.StreamHand
         openedSettings = true;
         moActivity.startActivityForResult(new Intent(Settings.ACTION_WIRELESS_SETTINGS), REQUEST_CODE_SETTINGS);
       } else if(connectedWifi(ssid)){
+        Log.d(TAG, "connectedWifi(ssid) return true");
         return true;
       } else if(resultsSettings){
         Log.d(TAG, "open settings break");
